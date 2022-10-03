@@ -12,16 +12,16 @@ FOUR_SPACES = '    '
 
 def fix_src(source_code: str) -> str:
     args_to_fix: Dict[Offset, ast.FunctionDef] = {}
-    functions_with_all_kwonly_args: Set[ast.FunctionDef] = set()
+    functions_with_one_line_kwonly_args: Set[ast.FunctionDef] = set()
 
     tree = ast.parse(source=source_code)
-    _collect_args_to_fix(tree, args_to_fix, functions_with_all_kwonly_args)
+    _collect_args_to_fix(tree, args_to_fix, functions_with_one_line_kwonly_args)
 
-    if not args_to_fix and not functions_with_all_kwonly_args:
+    if not args_to_fix and not functions_with_one_line_kwonly_args:
         return source_code
 
     tokens = src_to_tokens(source_code)
-    _fix_tokens(tokens, args_to_fix, functions_with_all_kwonly_args)
+    _fix_tokens(tokens, args_to_fix, functions_with_one_line_kwonly_args)
 
     return tokens_to_src(tokens)
 
@@ -29,7 +29,7 @@ def fix_src(source_code: str) -> str:
 def _collect_args_to_fix(
         tree: ast.Module,
         args_to_fix: Dict[Offset, ast.FunctionDef],
-        functions_with_all_kwonly_args: Set[ast.FunctionDef],
+        functions_with_one_line_kwonly_args: Set[ast.FunctionDef],
 ) -> None:
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
@@ -37,7 +37,11 @@ def _collect_args_to_fix(
             min_arg_lineno = _calc_min_arg_lineno(all_args=all_args)
 
             if all_args_kwonly:
-                functions_with_all_kwonly_args.add(node)
+                all_args_on_same_line = (
+                    len({_.lineno for _ in node.args.kwonlyargs}) == 1
+                )
+                if all_args_on_same_line:
+                    functions_with_one_line_kwonly_args.add(node)
 
             if min_arg_lineno is not None and min_arg_lineno != node.lineno:
                 if regular_args:
@@ -56,7 +60,7 @@ def _collect_args_to_fix(
                         arg_=node.args.vararg,
                         parent_node=node,
                         min_lineno_of_all_args=min_arg_lineno,
-                        forbidden_offset=5,
+                        forbidden_offset=5,  # because the arg starts with '*'
                         is_0th_arg=node.args.vararg.lineno == min_arg_lineno,
                         args_to_fix=args_to_fix,
                     )
@@ -66,7 +70,7 @@ def _collect_args_to_fix(
                         arg_=node.args.kwarg,
                         parent_node=node,
                         min_lineno_of_all_args=min_arg_lineno,
-                        forbidden_offset=6,
+                        forbidden_offset=6,  # because the arg starts with '**'
                         is_0th_arg=node.args.kwarg.lineno == min_arg_lineno,
                         args_to_fix=args_to_fix,
                     )
@@ -125,17 +129,14 @@ def _collect_if_not_correctly_indented(
 def _fix_tokens(
         tokens: List[Token],
         args_to_fix: Dict[Offset, ast.FunctionDef],
-        functions_with_all_kwonly_args: Set[ast.FunctionDef],
+        functions_with_one_line_kwonly_args: Set[ast.FunctionDef],
 ) -> None:
     func_with_all_kwonlyargs_and_oneline_args : Set[ast.FunctionDef] = set()
-    for func in functions_with_all_kwonly_args:
-        all_args_on_same_line = (len({_.lineno for _ in func.args.kwonlyargs}) == 1)
-        if all_args_on_same_line:
-            _fix_star_as_first_arg_and_all_args_on_same_line(
-                all_tokens=tokens,
-                arg_lineno=func.args.kwonlyargs[0].lineno
-            )
-            func_with_all_kwonlyargs_and_oneline_args.add(func)
+    for func in functions_with_one_line_kwonly_args:
+        _fix_star_as_first_arg_and_all_args_on_same_line(
+            all_tokens=tokens,
+            arg_lineno=func.args.kwonlyargs[0].lineno
+        )
 
     for i, token in enumerate(tokens):
         if token.name == 'NAME' and token.offset in args_to_fix:
