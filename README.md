@@ -27,10 +27,10 @@ Use `--help` to see documentations of command line arguments.
 
 ### As a pre-commit hook
 
-Put the following into your `.pre-commit-config.yaml` file:
+Put the following into your `.pre-commit-config.yaml` file. Remember to replace `<VERSION>` with your version of this tool (such as `v0.1.4`):
 ```yaml
 -   repo: https://github.com/cyyc1/py-def-indent-formatter
-    rev: v0.1.3
+    rev: <VERSION>
     hooks:
     -   id: format-def-indent
 ```
