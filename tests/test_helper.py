@@ -1,4 +1,3 @@
-from timeit import repeat
 import pytest
 from format_def_indent._helper import fix_src
 

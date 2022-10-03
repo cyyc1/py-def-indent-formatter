@@ -1,5 +1,5 @@
 import ast
-from typing import Set, List
+from typing import Set, List, Tuple
 
 from tokenize_rt import Token
 from tokenize_rt import Offset
@@ -26,25 +26,8 @@ def fix_src(source_code: str) -> str:
 def _collect_args_to_fix(tree: ast.Module, args_to_fix: Set[Offset]) -> None:
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
-            all_args = []
-            regular_args = []
-
-            regular_args.extend(node.args.args)
-            regular_args.extend(node.args.posonlyargs)
-            regular_args.extend(node.args.kwonlyargs)
-
-            all_args.extend(regular_args)
-
-            if node.args.vararg is not None:
-                all_args.append(node.args.vararg)
-
-            if node.args.kwarg is not None:
-                all_args.append(node.args.kwarg)
-
-            if all_args:
-                min_arg_lineno = min(_.lineno for _ in all_args)
-            else:
-                min_arg_lineno = None
+            all_args, regular_args = _collect_args_from_node(node)
+            min_arg_lineno = _calc_min_arg_lineno(all_args=all_args)
 
             if min_arg_lineno is not None and min_arg_lineno != node.lineno:
                 if regular_args:
@@ -77,6 +60,32 @@ def _collect_args_to_fix(tree: ast.Module, args_to_fix: Set[Offset]) -> None:
                         is_0th_arg=node.args.kwarg.lineno == min_arg_lineno,
                         collection=args_to_fix,
                     )
+
+
+def _collect_args_from_node(node: ast.FunctionDef) -> Tuple[List, List]:
+    all_args = []
+    regular_args = []
+
+    regular_args.extend(node.args.args)
+    regular_args.extend(node.args.posonlyargs)
+    regular_args.extend(node.args.kwonlyargs)
+
+    all_args.extend(regular_args)
+
+    if node.args.vararg is not None:
+        all_args.append(node.args.vararg)
+
+    if node.args.kwarg is not None:
+        all_args.append(node.args.kwarg)
+
+    return all_args, regular_args
+
+
+def _calc_min_arg_lineno(all_args: List[ast.arg]):
+    if all_args:
+        return min(_.lineno for _ in all_args)
+
+    return None
 
 
 def _collect_if_not_correctly_indented(

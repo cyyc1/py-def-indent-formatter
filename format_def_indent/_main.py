@@ -1,4 +1,4 @@
-# Partialy adapted from https://github.com/asottile/add-trailing-comma/blob/6be6dfc05176bddfc5a9c4bf0fd4941850f0fb41/add_trailing_comma/_main.py
+# Partialy adapted from https://github.com/asottile/add-trailing-comma/blob/6be6dfc05176bddfc5a9c4bf0fd4941850f0fb41/add_trailing_comma/_main.py  # noqa: E501
 
 from __future__ import annotations
 
