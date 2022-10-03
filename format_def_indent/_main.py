@@ -11,34 +11,6 @@ from typing import Sequence
 import format_def_indent._helper as helper
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('paths', nargs='*')
-    parser.add_argument('--exit-zero-even-if-changed', action='store_true')
-    args = parser.parse_args(argv)
-
-    ret = 0
-    for path in args.paths:
-        ret |= fix_one_directory(path, args)
-
-    return ret
-
-
-def fix_one_directory(folder_name: str, args: argparse.Namespace) -> int:
-    path_obj = Path(folder_name)
-
-    if path_obj.is_file():
-        return fix_one_file(path_obj.as_posix(), args=args)
-
-    filenames = sorted(path_obj.rglob('*.py'))
-    all_status = set()
-    for filename in filenames:
-        status = fix_one_file(filename, args=args)
-        all_status.add(status)
-
-    return 0 if all_status == {0} else 1
-
-
 def fix_one_file(filename: str, args: argparse.Namespace) -> int:
     if filename == '-':
         source_bytes = sys.stdin.buffer.read()
@@ -66,6 +38,34 @@ def fix_one_file(filename: str, args: argparse.Namespace) -> int:
         return 0
     else:
         return source_text != source_text_orig
+
+
+def fix_one_directory(folder_name: str, args: argparse.Namespace) -> int:
+    path_obj = Path(folder_name)
+
+    if path_obj.is_file():
+        return fix_one_file(path_obj.as_posix(), args=args)
+
+    filenames = sorted(path_obj.rglob('*.py'))
+    all_status = set()
+    for filename in filenames:
+        status = fix_one_file(filename, args=args)
+        all_status.add(status)
+
+    return 0 if all_status == {0} else 1
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('paths', nargs='*')
+    parser.add_argument('--exit-zero-even-if-changed', action='store_true')
+    args = parser.parse_args(argv)
+
+    ret = 0
+    for path in args.paths:
+        ret |= fix_one_directory(path, args)
+
+    return ret
 
 
 if __name__ == '__main__':
