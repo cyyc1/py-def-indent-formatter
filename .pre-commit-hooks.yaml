@@ -1,0 +1,6 @@
+-   id: format-def-indent
+    name: Format indentation in function definitions
+    description: Make sure arguments in Python function definitions are indented by 8 spaces.
+    entry: format-def-indent
+    language: python
+    types: [python]
