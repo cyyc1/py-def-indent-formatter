@@ -1,5 +1,5 @@
 import ast
-from typing import Set, List, Tuple
+from typing import Set, List, Tuple, Dict
 
 from tokenize_rt import Token
 from tokenize_rt import Offset
@@ -10,7 +10,7 @@ FOUR_SPACES = '    '
 
 
 def fix_src(source_code: str) -> str:
-    args_to_fix: set[Offset] = set()
+    args_to_fix: Dict[Offset, ast.FunctionDef] = {}
     tree = ast.parse(source=source_code)
     _collect_args_to_fix(tree, args_to_fix=args_to_fix)
 
@@ -23,7 +23,10 @@ def fix_src(source_code: str) -> str:
     return tokens_to_src(tokens)
 
 
-def _collect_args_to_fix(tree: ast.Module, args_to_fix: Set[Offset]) -> None:
+def _collect_args_to_fix(
+        tree: ast.Module,
+        args_to_fix: Dict[Offset, ast.FunctionDef],
+) -> None:
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             all_args, regular_args = _collect_args_from_node(node)
@@ -38,7 +41,7 @@ def _collect_args_to_fix(tree: ast.Module, args_to_fix: Set[Offset]) -> None:
                             min_lineno_of_all_args=min_arg_lineno,
                             forbidden_offset=4,
                             is_0th_arg=arg_.lineno == min_arg_lineno,
-                            collection=args_to_fix,
+                            args_to_fix=args_to_fix,
                         )
 
                 if node.args.vararg is not None:
@@ -48,7 +51,7 @@ def _collect_args_to_fix(tree: ast.Module, args_to_fix: Set[Offset]) -> None:
                         min_lineno_of_all_args=min_arg_lineno,
                         forbidden_offset=5,
                         is_0th_arg=node.args.vararg.lineno == min_arg_lineno,
-                        collection=args_to_fix,
+                        args_to_fix=args_to_fix,
                     )
 
                 if node.args.kwarg is not None:
@@ -58,7 +61,7 @@ def _collect_args_to_fix(tree: ast.Module, args_to_fix: Set[Offset]) -> None:
                         min_lineno_of_all_args=min_arg_lineno,
                         forbidden_offset=6,
                         is_0th_arg=node.args.kwarg.lineno == min_arg_lineno,
-                        collection=args_to_fix,
+                        args_to_fix=args_to_fix,
                     )
 
 
@@ -94,7 +97,7 @@ def _collect_if_not_correctly_indented(
         min_lineno_of_all_args: int,
         forbidden_offset: int,
         is_0th_arg: bool,
-        collection: Set[Offset],
+        args_to_fix: Dict[Offset, ast.FunctionDef],
 ) -> None:
     if arg_.lineno == parent_node.lineno:
         # We don't need to fix args that are on the same line as as the
@@ -107,12 +110,23 @@ def _collect_if_not_correctly_indented(
     extra_offset = arg_.col_offset - parent_node.col_offset
     if extra_offset == forbidden_offset:
         if is_0th_arg or arg_.lineno != min_lineno_of_all_args:
-            collection.add(Offset(arg_.lineno, arg_.col_offset))
+            args_to_fix[Offset(arg_.lineno, arg_.col_offset)] = parent_node
 
 
-def _fix_tokens(tokens: List[Token], args_to_fix: Set[Offset]) -> None:
+def _fix_tokens(
+        tokens: List[Token],
+        args_to_fix: Dict[Offset, ast.FunctionDef],
+) -> None:
     for i, token in enumerate(tokens):
         if token.name == 'NAME' and token.offset in args_to_fix:
+            parent_node = args_to_fix[token.offset]
+            _fix_star_in_args(
+                parent_node,
+                tokens,
+                current_lineno=token.line,
+                current_coloffset=token.utf8_byte_offset,
+            )
+
             if i > 0:
                 prev_token = tokens[i - 1]
                 if prev_token.name == 'OP' and prev_token.src in {'**', '*'}:
@@ -123,3 +137,56 @@ def _fix_tokens(tokens: List[Token], args_to_fix: Set[Offset]) -> None:
                     tokens[i] = tokens[i]._replace(src=FOUR_SPACES + token.src)
             else:
                 tokens[i] = tokens[i]._replace(src=FOUR_SPACES + token.src)
+
+
+def _fix_star_in_args(
+        parent_node: ast.FunctionDef,
+        all_tokens: List[Token],
+        current_lineno: int,
+        current_coloffset: int,
+) -> None:
+    """Fix '*,' in the argument list, which precedes keyword-only arguments."""
+    token_indices_in_func = _collect_tokens_within_function_def_range(
+        start_lineno=parent_node.lineno,
+        end_lineno=parent_node.end_lineno,
+        all_tokens=all_tokens,
+    )
+    for j in token_indices_in_func[1:-1]:
+        # We start from 1 and end at -1, because '*' cannot be the 0th token
+        # or the last token of a valid piece of Python function definition.
+        this_token = all_tokens[j]
+        prev_token = all_tokens[j - 1]
+        next_token = all_tokens[j + 1]
+        if (
+                this_token.name == 'OP' and this_token.src == '*'
+                and prev_token.name != 'NAME'
+
+                # Since we assume the input code are already formatted by
+                # "black", we can assume no spaces between '*' and ','
+                and next_token.name == 'OP' and next_token.src == ','
+
+                # If '*,' and the current argument are on the same line, we
+                # should not fix '*,'
+                and (
+                    this_token.line != current_lineno
+                    or (
+                        this_token.line == current_lineno
+                        and this_token.utf8_byte_offset < current_coloffset
+                    )
+                )
+        ):
+            all_tokens[j] = all_tokens[j]._replace(src=FOUR_SPACES + '*')
+
+
+def _collect_tokens_within_function_def_range(
+        *,
+        start_lineno: int,
+        end_lineno: int,
+        all_tokens: List[Token],
+) -> List[int]:
+    qualifying_token_indices = []
+    for i, token in enumerate(all_tokens):
+        if start_lineno <= token.line <= end_lineno:
+            qualifying_token_indices.append(i)
+
+    return qualifying_token_indices
