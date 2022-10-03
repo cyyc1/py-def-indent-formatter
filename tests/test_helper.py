@@ -176,6 +176,49 @@ class MyClass:
 """
 
 
+before_5a = """
+def func0(
+    argA,
+    argB,
+    *argC,
+    **argD,
+):
+    pass
+"""
+
+after_5a = """
+def func0(
+        argA,
+        argB,
+        *argC,
+        **argD,
+):
+    pass
+"""
+
+
+before_5b = """
+def func0(arg1, *arg2, **arg3):
+    pass
+"""
+after_5b = before_5b
+
+
+before_5c = """
+def func0(
+    arg1, arg2, *arg3, **arg4,
+):
+    pass
+"""
+
+after_5c = """
+def func0(
+        arg1, arg2, *arg3, **arg4,
+):
+    pass
+"""
+
+
 before_999a = """
 something = some_func(
     arg1, arg2=4, arg3=True,
@@ -248,6 +291,9 @@ test_cases = [
     (before_2c, after_2c),
     (before_3, after_3),
     (before_4a, after_4a),
+    (before_5a, after_5a),
+    (before_5b, after_5b),
+    (before_5c, after_5c),
     (before_999a, after_999a),
     (before_999b, after_999b),
     (before_999c, after_999c),
