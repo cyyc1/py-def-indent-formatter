@@ -218,6 +218,78 @@ def func0(
 """
 
 
+before_5d = """
+def func0(
+    arg1,
+    arg2,
+    *,
+    arg3: int = 2,
+    arg4: bool = False,
+):
+    print(2)
+"""
+
+after_5d = """
+def func0(
+        arg1,
+        arg2,
+        *,
+        arg3: int = 2,
+        arg4: bool = False,
+):
+    print(2)
+"""
+
+
+before_5e = """
+def func0(
+    *,
+    arg3: int = 2,
+    arg4: bool = False,
+):
+    print(2)
+"""
+
+after_5e = """
+def func0(
+        *,
+        arg3: int = 2,
+        arg4: bool = False,
+):
+    print(2)
+"""
+
+
+before_5f = """
+def func0(
+    arg1, arg2, *, arg3: int = 2, arg4: bool = False,
+):
+    print(2)
+"""
+
+after_5f = """
+def func0(
+        arg1, arg2, *, arg3: int = 2, arg4: bool = False,
+):
+    print(2)
+"""
+
+
+before_5g = """
+def func0(
+    *, arg3: int = 2, arg4: bool = False,
+):
+    print(2)
+"""
+
+after_5g = """
+def func0(
+        *, arg3: int = 2, arg4: bool = False,
+):
+    print(2)
+"""
+
+
 before_999a = """
 something = some_func(
     arg1, arg2=4, arg3=True,
@@ -293,6 +365,10 @@ test_cases = [
     (before_5a, after_5a),
     (before_5b, after_5b),
     (before_5c, after_5c),
+    (before_5d, after_5d),
+    (before_5e, after_5e),
+    (before_5f, after_5f),
+    (before_5g, after_5g),
     (before_999a, after_999a),
     (before_999b, after_999b),
     (before_999c, after_999c),
