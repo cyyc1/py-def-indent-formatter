@@ -126,41 +126,37 @@ def _collect_if_not_correctly_indented(
 
 
 def _fix_tokens(
-        tokens: List[Token],
+        all_tokens: List[Token],
         args_to_fix: Dict[Offset, ast.FunctionDef],
         functions_with_one_line_kwonly_args: Set[ast.FunctionDef],
 ) -> None:
-    func_with_all_kwonlyargs_and_oneline_args: Set[ast.FunctionDef] = set()
     for func in functions_with_one_line_kwonly_args:
         _fix_star_as_first_arg_and_all_args_on_same_line(
-            all_tokens=tokens,
+            all_tokens=all_tokens,
             arg_lineno=func.args.kwonlyargs[0].lineno,
             parent_function=func,
         )
 
-    for i, token in enumerate(tokens):
+    for i, token in enumerate(all_tokens):
         if token.name == 'NAME' and token.offset in args_to_fix:
             parent_node = args_to_fix[token.offset]
-            if parent_node in func_with_all_kwonlyargs_and_oneline_args:
-                continue  # don't fix because we've dealt with them before
 
-            _fix_star_in_args(
-                parent_node,
-                tokens,
+            _fix_star_in_args_other_cases(
+                parent_node=parent_node,
+                all_tokens=all_tokens,
                 current_lineno=token.line,
-                current_coloffset=token.utf8_byte_offset,
             )
 
             if i > 0:
-                prev_token = tokens[i - 1]
+                prev_token = all_tokens[i - 1]
                 if prev_token.name == 'OP' and prev_token.src in {'**', '*'}:
-                    tokens[i - 1] = tokens[i - 1]._replace(
+                    all_tokens[i - 1] = all_tokens[i - 1]._replace(
                         src=f'{FOUR_SPACES}{prev_token.src}',
                     )
                 else:
-                    tokens[i] = tokens[i]._replace(src=FOUR_SPACES + token.src)
+                    all_tokens[i] = all_tokens[i]._replace(src=FOUR_SPACES + token.src)
             else:
-                tokens[i] = tokens[i]._replace(src=FOUR_SPACES + token.src)
+                all_tokens[i] = all_tokens[i]._replace(src=FOUR_SPACES + token.src)
 
 
 def _fix_star_as_first_arg_and_all_args_on_same_line(
@@ -168,6 +164,13 @@ def _fix_star_as_first_arg_and_all_args_on_same_line(
         arg_lineno: int,
         parent_function: ast.FunctionDef,
 ) -> None:
+    """
+    Fix the following kind of function definitions, where all arguments are on
+    the same line, '*,' precedes all arguments:
+
+    >>> def some_func(*, arg1, arg2, arg3):
+    >>>     print(1)
+    """
     for i, token in enumerate(all_tokens):
         if (
                 token.line == arg_lineno
@@ -178,13 +181,20 @@ def _fix_star_as_first_arg_and_all_args_on_same_line(
             all_tokens[i] = all_tokens[i]._replace(src=FOUR_SPACES + '*')
 
 
-def _fix_star_in_args(
+def _fix_star_in_args_other_cases(
         parent_node: ast.FunctionDef,
         all_tokens: List[Token],
         current_lineno: int,
-        current_coloffset: int,
 ) -> None:
-    """Fix '*,' in the argument list, which precedes keyword-only arguments."""
+    """
+    Fix '*,' in the argument list, except for the case mentioned in
+    _fix_star_as_first_arg_and_all_args_on_same_line()
+
+    We need to specially treat '*,' because '*,' does not appear anywhere
+    in the parsed AST structure.
+    """
+
+    # We only care about '*,' that appears within the range of a function
     token_indices_in_func = _collect_tokens_within_function_def_range(
         start_lineno=parent_node.lineno,
         end_lineno=parent_node.end_lineno,
@@ -197,22 +207,20 @@ def _fix_star_in_args(
         prev_token = all_tokens[j - 1]
         next_token = all_tokens[j + 1]
         if (
-                this_token.name == 'OP' and this_token.src == '*'
+                this_token.name == 'OP'
+                and this_token.src == '*'
                 and prev_token.name != 'NAME'
 
                 # Since we assume the input code are already formatted by
                 # "black", we can assume no spaces between '*' and ','
                 and next_token.name == 'OP' and next_token.src == ','
 
-                # If '*,' and the current argument are on the same line, we
-                # should not fix '*,'
-                and (
-                    this_token.line != current_lineno
-                    or (
-                        this_token.line == current_lineno
-                        and this_token.utf8_byte_offset < current_coloffset
-                    )
-                )
+                # If '*,' and the current argument are on the same line, it
+                # means that '*,' is in between different arguments (Because
+                # we have already dealt with the case where '*,' is the 0th
+                # argument.)
+                # Therefore, no need to fix this_token.line == current_lineno
+                and this_token.line != current_lineno
         ):
             all_tokens[j] = all_tokens[j]._replace(src=FOUR_SPACES + '*')
 
