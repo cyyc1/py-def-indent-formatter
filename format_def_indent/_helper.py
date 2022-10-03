@@ -94,7 +94,7 @@ def _collect_if_not_correctly_indented(
         min_lineno_of_all_args: int,
         forbidden_offset: int,
         is_0th_arg: bool,
-        collection: set[Offset],
+        collection: Set[Offset],
 ) -> None:
     if arg_.lineno == parent_node.lineno:
         # We don't need to fix args that are on the same line as as the
