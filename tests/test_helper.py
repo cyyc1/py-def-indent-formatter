@@ -382,14 +382,14 @@ def test_fix_src(before_src, after_src):
     assert fix_src(before_src) == after_src
 
 
-# @pytest.mark.parametrize('before_src, after_src', test_cases)
-# def test_fix_src__repeated_run(before_src, after_src):
-#     # This test makes sure the formatted code file stays the same no matter
-#     # how many times we format it.
+@pytest.mark.parametrize('before_src, after_src', test_cases)
+def test_fix_src__repeated_run(before_src, after_src):
+    # This test makes sure the formatted code file stays the same no matter
+    # how many times we format it.
 
-#     how_many_repeated_runs = 100  # this should be enough
-#     before_src_ = before_src
-#     for _ in range(how_many_repeated_runs):
-#         buffer = fix_src(before_src_)
-#         assert buffer == after_src
-#         before_src_ = buffer
+    how_many_repeated_runs = 100  # this should be enough
+    before_src_ = before_src
+    for _ in range(how_many_repeated_runs):
+        buffer = fix_src(before_src_)
+        assert buffer == after_src
+        before_src_ = buffer

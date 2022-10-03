@@ -112,10 +112,10 @@ def _collect_if_not_correctly_indented(
         args_to_fix: Dict[Offset, ast.FunctionDef],
 ) -> None:
     if arg_.lineno == parent_node.lineno:
-        # We don't need to fix args that are on the same line as as the
+        # We don't need to fix args that are on the same line as the
         # function definition. This is because we assume the input always
-        # come from `black`'s output, so if it an arg is on the same line
-        # as the function defition, it means the whole function signature
+        # come from `black`'s output, so if all its args are on the same line
+        # as the function definition, it means the whole function signature
         # fits into one line, and there's nothing to fix.
         return
 
@@ -135,6 +135,7 @@ def _fix_tokens(
         _fix_star_as_first_arg_and_all_args_on_same_line(
             all_tokens=tokens,
             arg_lineno=func.args.kwonlyargs[0].lineno,
+            parent_function=func,
         )
 
     for i, token in enumerate(tokens):
@@ -165,9 +166,15 @@ def _fix_tokens(
 def _fix_star_as_first_arg_and_all_args_on_same_line(
         all_tokens: List[Token],
         arg_lineno: int,
+        parent_function: ast.FunctionDef,
 ) -> None:
     for i, token in enumerate(all_tokens):
-        if token.line == arg_lineno and token.name == 'OP' and token.src == '*':
+        if (
+                token.line == arg_lineno
+                and token.name == 'OP'
+                and token.src == '*'
+                and token.utf8_byte_offset - parent_function.col_offset == 4
+        ):
             all_tokens[i] = all_tokens[i]._replace(src=FOUR_SPACES + '*')
 
 
