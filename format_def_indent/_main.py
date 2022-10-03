@@ -20,6 +20,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     ret = 0
     for path in args.paths:
         ret |= fix_one_directory(path, args)
+
     return ret
 
 
