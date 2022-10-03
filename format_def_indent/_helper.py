@@ -1,5 +1,4 @@
 import ast
-from fileinput import lineno
 from typing import Set, List, Tuple, Dict
 
 from tokenize_rt import Token
@@ -131,11 +130,11 @@ def _fix_tokens(
         args_to_fix: Dict[Offset, ast.FunctionDef],
         functions_with_one_line_kwonly_args: Set[ast.FunctionDef],
 ) -> None:
-    func_with_all_kwonlyargs_and_oneline_args : Set[ast.FunctionDef] = set()
+    func_with_all_kwonlyargs_and_oneline_args: Set[ast.FunctionDef] = set()
     for func in functions_with_one_line_kwonly_args:
         _fix_star_as_first_arg_and_all_args_on_same_line(
             all_tokens=tokens,
-            arg_lineno=func.args.kwonlyargs[0].lineno
+            arg_lineno=func.args.kwonlyargs[0].lineno,
         )
 
     for i, token in enumerate(tokens):
