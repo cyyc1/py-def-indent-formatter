@@ -11,10 +11,10 @@ after_0b = before_0b
 
 
 before_1 = """
-def parent_func(
+def parent_func1(
     x, y, z,
 ):
-    def some_func(
+    def some_func1(
         arg1,
         arg2,  # comments should be retained
         arg3: int,
@@ -29,10 +29,10 @@ def parent_func(
 """
 
 after_1 = """
-def parent_func(
+def parent_func1(
         x, y, z,
 ):
-    def some_func(
+    def some_func1(
             arg1,
             arg2,  # comments should be retained
             arg3: int,
@@ -48,7 +48,7 @@ def parent_func(
 
 
 before_2a = """
-def func2(arg1, arg2, arg3, arg4, arg5):
+def func2a(arg1, arg2, arg3, arg4, arg5):
     return 2
 """
 
@@ -56,8 +56,8 @@ after_2a = before_2a
 
 
 before_2b = """
-def func2(arg1, arg2, arg3, arg4, arg5) -> int:
-    def func3(
+def func2b(arg1, arg2, arg3, arg4, arg5) -> int:
+    def func2b_inner(
         arg_one,
         arg_two,
         arg_three,
@@ -67,8 +67,8 @@ def func2(arg1, arg2, arg3, arg4, arg5) -> int:
 """
 
 after_2b = """
-def func2(arg1, arg2, arg3, arg4, arg5) -> int:
-    def func3(
+def func2b(arg1, arg2, arg3, arg4, arg5) -> int:
+    def func2b_inner(
             arg_one,
             arg_two,
             arg_three,
@@ -79,40 +79,40 @@ def func2(arg1, arg2, arg3, arg4, arg5) -> int:
 
 
 before_2c = """
-def func1(arg1, arg2, arg3):
+def func2c_1(arg1, arg2, arg3):
     pass
 
-def func2(arg_one, arg_two, arg_three):
+def func2c_2(arg_one, arg_two, arg_three):
     pass
 
-def func3(
+def func2c_3(
     arg_1,
     arg_2,
     arg_3,
 ):
     pass
 
-def func4(
+def func2c_4(
     argA, argB, argC, argD,
 ):
     pass
 """
 
 after_2c = """
-def func1(arg1, arg2, arg3):
+def func2c_1(arg1, arg2, arg3):
     pass
 
-def func2(arg_one, arg_two, arg_three):
+def func2c_2(arg_one, arg_two, arg_three):
     pass
 
-def func3(
+def func2c_3(
         arg_1,
         arg_2,
         arg_3,
 ):
     pass
 
-def func4(
+def func2c_4(
         argA, argB, argC, argD,
 ):
     pass
@@ -135,40 +135,40 @@ def func3(
 
 
 before_4a = """
-class MyClass:
+class MyClass4a:
     def __init__(
         self,
         data,
     ):
         self.data = data
 
-    def some_func(
+    def some_func_4a(
         arg1, arg2, arg3, arg4,
     ):
         print(2)
 
     @classmethod
-    def some_method(
+    def some_method_4a(
         cls, arg1: int, arg2: dict,
     ) -> float:
         return 2.0
 """
 
 after_4a = """
-class MyClass:
+class MyClass4a:
     def __init__(
             self,
             data,
     ):
         self.data = data
 
-    def some_func(
+    def some_func_4a(
             arg1, arg2, arg3, arg4,
     ):
         print(2)
 
     @classmethod
-    def some_method(
+    def some_method_4a(
             cls, arg1: int, arg2: dict,
     ) -> float:
         return 2.0
@@ -221,7 +221,7 @@ def func5c(
 before_5d = """
 def func5d(
     arg1,
-    arg2,
+    arg2=3,
     *,
     arg3: int = 2,
     arg4: bool = False,
@@ -232,7 +232,7 @@ def func5d(
 after_5d = """
 def func5d(
         arg1,
-        arg2,
+        arg2=3,
         *,
         arg3: int = 2,
         arg4: bool = False,
@@ -291,7 +291,7 @@ def func5g(
 
 
 before_999a = """
-something = some_func(
+something = some_func_999a(
     arg1, arg2=4, arg3=True,
 )
 """
@@ -300,7 +300,7 @@ after_999a = before_999a  # because this is a function call, not a function def
 
 
 before_999b = """
-some_dict = {
+some_dict_999b = {
     'a': 1,
     'b': 2,
 }
@@ -310,7 +310,7 @@ after_999b = before_999b  # again, this is not a function def, so nothing to fix
 
 
 before_999c = """
-def some_func(
+def some_func_999c(
       arg1,
       arg2,
       arg3,
@@ -321,7 +321,7 @@ after_999c = before_999c  # indent ≠ 4 spaces; won't fix even if it's bad styl
 
 
 before_999d = """
-def some_func(
+def some_func_999d(
  arg1,
   arg2,
    arg3,
@@ -332,7 +332,7 @@ after_999d = before_999d  # indentation ≠ 4 spaces, so we don't fix this case
 
 
 before_999e = """
-def some_func(
+def some_func_999e(
    arg1,
     arg2,  # this is 4 spaces
      arg3,
@@ -344,7 +344,7 @@ def some_func(
 # formatter before running this formatter, so this case should not happen
 # in reality:
 after_999e = """
-def some_func(
+def some_func_999e(
    arg1,
         arg2,  # this is 4 spaces
      arg3,
