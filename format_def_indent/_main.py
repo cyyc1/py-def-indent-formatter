@@ -3,57 +3,46 @@
 import argparse
 import sys
 
-from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Optional
 
 import format_def_indent._helper as helper
+from format_def_indent._base_fixer import BaseFixer
 
 
-def fix_one_file(filename: str, args: argparse.Namespace) -> int:
-    if filename == '-':
-        source_bytes = sys.stdin.buffer.read()
-    else:
-        with open(filename, 'rb') as fb:
-            source_bytes = fb.read()
+class PythonFileFixer(BaseFixer):
+    def __init__(self, folder_name: str, cli_args: argparse.Namespace) -> None:
+        super().__init__(folder_name=folder_name, cli_args=cli_args)
 
-    try:
-        source_text_orig = source_text = source_bytes.decode()
-    except UnicodeDecodeError:
-        msg = f'{filename} is non-utf-8 (not supported)'
-        print(msg, file=sys.stderr)
-        return 1
+    def fix_one_file(self, filename: str) -> int:
+        if filename == '-':
+            source_bytes = sys.stdin.buffer.read()
+        else:
+            with open(filename, 'rb') as fb:
+                source_bytes = fb.read()
 
-    source_text = helper.fix_src(source_text)
+        try:
+            source_text_orig = source_text = source_bytes.decode()
+        except UnicodeDecodeError:
+            msg = f'{filename} is non-utf-8 (not supported)'
+            print(msg, file=sys.stderr)
+            return 1
 
-    if filename == '-':
-        print(source_text, end='')
-    elif source_text != source_text_orig:
-        print(f'Rewriting {filename}', file=sys.stderr)
-        with open(filename, 'wb') as f:
-            f.write(source_text.encode())
+        source_text = helper.fix_src(source_text)
 
-    if args.exit_zero_even_if_changed:
-        return 0
-    else:
-        return source_text != source_text_orig
+        if filename == '-':
+            print(source_text, end='')
+        elif source_text != source_text_orig:
+            print(f'Rewriting {filename}', file=sys.stderr)
+            with open(filename, 'wb') as f:
+                f.write(source_text.encode())
 
-
-def fix_one_directory(folder_name: str, args: argparse.Namespace) -> int:
-    path_obj = Path(folder_name)
-
-    if path_obj.is_file():
-        return fix_one_file(path_obj.as_posix(), args=args)
-
-    filenames = sorted(path_obj.rglob('*.py'))
-    all_status = set()
-    for filename in filenames:
-        status = fix_one_file(filename, args=args)
-        all_status.add(status)
-
-    return 0 if all_status == {0} else 1
+        if self.cli_args.exit_zero_even_if_changed:
+            return 0
+        else:
+            return source_text != source_text_orig
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('paths', nargs='*')
     parser.add_argument('--exit-zero-even-if-changed', action='store_true')
@@ -61,7 +50,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     ret = 0
     for path in args.paths:
-        ret |= fix_one_directory(path, args)
+        fixer = PythonFileFixer(folder_name=path, cli_args=args)
+        ret |= fixer.fix_one_directory()
 
     return ret
 
