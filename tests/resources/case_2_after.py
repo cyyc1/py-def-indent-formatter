@@ -6,7 +6,6 @@ def some_func(
 ):
     return 1
 
-
 def some_other_func(
         *, arg1, arg2, arg3,
 ):
