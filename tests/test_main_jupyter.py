@@ -77,6 +77,32 @@ def test_fix_jupyter_notebook__nothing_to_fix():
     assert ret_val == 0
 
 
+@pytest.mark.parametrize('cli_args, expected_return_value', test_cases)
+def test_fix_jupyter_notebook__ipython_magics(cli_args, expected_return_value):
+    filename_before, filename_after, filename_before_copy = _generate_filenames(
+        case=3,
+    )
+
+    shutil.copyfile(filename_before, filename_before_copy)
+
+    parsed_before = JupyterNotebookParser(filename_before_copy)
+    parsed_after = JupyterNotebookParser(filename_after)
+
+    assert parsed_before.notebook_content != parsed_after.notebook_content
+
+    fixer = JupyterNotebookFixer(
+        path=filename_before_copy,
+        cli_args=arg_parser.parse_args(cli_args),
+    )
+    ret_val = fixer.fix_one_directory_or_one_file()  # original file overwritten
+
+    fixed = JupyterNotebookParser(filename_before_copy)  # re-read from disk
+    os.remove(filename_before_copy)
+
+    assert fixed.notebook_content == parsed_after.notebook_content
+    assert ret_val == expected_return_value
+
+
 def _generate_filenames(case: int) -> Tuple[str, str, str]:
     filename_before = os.path.join(RESOURCE_DIR, f'case_{case}_before.ipynb')
     filename_after = os.path.join(RESOURCE_DIR, f'case_{case}_after.ipynb')

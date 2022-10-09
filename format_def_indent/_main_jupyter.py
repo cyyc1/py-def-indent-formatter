@@ -3,7 +3,10 @@ import json
 import sys
 from typing import Sequence, Optional
 
-from jupyter_notebook_parser import JupyterNotebookParser, JupyterNotebookRewriter
+from jupyter_notebook_parser import JupyterNotebookParser
+from jupyter_notebook_parser import JupyterNotebookRewriter
+from jupyter_notebook_parser import SourceCodeContainer
+from jupyter_notebook_parser import reconstruct_source
 
 import format_def_indent._helper as helper
 from format_def_indent._base_fixer import BaseFixer
@@ -30,14 +33,17 @@ class JupyterNotebookFixer(BaseFixer):
 
             for i in range(len(code_cells)):
                 index: int = code_cell_indices[i]
-                source: str = code_cell_sources[i]
-                fixed: str = helper.fix_src(source_code=source)
+                source: SourceCodeContainer = code_cell_sources[i]
+                source_without_magic: str = source.source_without_magic
+                magics: dict = source.magics
+                fixed: str = helper.fix_src(source_code=source_without_magic)
 
-                if fixed != source:
+                if fixed != source_without_magic:
                     ret_val = 1
+                    fixed_with_magics = reconstruct_source(fixed, magics)
                     rewriter.replace_source_in_code_cell(
                         index=index,
-                        new_source=fixed,
+                        new_source=fixed_with_magics,
                     )
 
             if ret_val == 1:
