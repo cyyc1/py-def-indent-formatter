@@ -20,20 +20,37 @@ pip install format-def-indent
 
 ### As a command line tool
 
+To auto-format Python files (.py):
+
 ```bash
 format-def-indent <PATH_THAT_CONTAINS_PYTHON_FILES>
 ```
 Use `--help` to see documentations of command line arguments.
 
+To auto-format Jupyter notebooks (.ipynb):
+
+```bash
+format-def-indent-in-jupyter <PATH_THAT_CONTAINS_PYTHON_FILES>
+```
+
 ### As a pre-commit hook
 
-Put the following into your `.pre-commit-config.yaml` file. Remember to replace `<VERSION>` with your version of this tool (such as `v0.1.4`):
+To auto-format Python files (.py), put the following into your `.pre-commit-config.yaml` file. Remember to replace `<VERSION>` with your version of this tool (such as `v0.1.4`):
 ```yaml
 -   repo: https://github.com/cyyc1/py-def-indent-formatter
     rev: <VERSION>
     hooks:
     -   id: format-def-indent
 ```
+
+To auto-format Jupyter notebooks (.ipynb), put the following into your `.pre-commit-config.yaml` file:
+```yaml
+-   repo: https://github.com/cyyc1/py-def-indent-formatter
+    rev: <VERSION>
+    hooks:
+    -   id: format-def-indent-in-jupyter
+```
+
 See [pre-commit](https://github.com/pre-commit/pre-commit) for more instructions.
 
 ## What does this formatter do
