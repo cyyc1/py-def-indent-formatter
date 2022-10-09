@@ -290,6 +290,17 @@ def func5g(
 """
 
 
+before_998a = """Some text with syntax errors"""
+after_998a = before_998a
+
+
+before_998b = """
+def func998b(arg1, arg2)  # syntax error, by design
+    print(2)
+"""
+after_998b = before_998b
+
+
 before_999a = """
 something = some_func_999a(
     arg1, arg2=4, arg3=True,
@@ -369,6 +380,8 @@ test_cases = [
     (before_5e, after_5e),
     (before_5f, after_5f),
     (before_5g, after_5g),
+    (before_998a, after_998a),
+    (before_998b, after_998b),
     (before_999a, after_999a),
     (before_999b, after_999b),
     (before_999c, after_999c),

@@ -1,11 +1,11 @@
 -   id: format-def-indent
-    name: Format indentation in function definitions (in .py files)
+    name: Formatting indentation in function definitions (in .py files)
     description: Make sure arguments in Python function definitions are indented by 8 spaces.
     entry: format-def-indent
     language: python
     types: [python]
 -   id: format-def-indent-in-jupyter
-    name: Format indentation in function definitions (in .ipynb files)
+    name: Formatting indentation in function definitions (in .ipynb files)
     description: In Jupyter notebooks, make sure arguments in Python function definitions are indented by 8 spaces.
     entry: format-def-indent-in-jupyter
     language: python

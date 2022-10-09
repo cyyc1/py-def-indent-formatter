@@ -13,7 +13,13 @@ def fix_src(source_code: str) -> str:
     args_to_fix: Dict[Offset, ast.FunctionDef] = {}
     functions_with_one_line_kwonly_args: Set[ast.FunctionDef] = set()
 
-    tree = ast.parse(source=source_code)
+    try:
+        tree = ast.parse(source=source_code)
+    except SyntaxError:
+        # We ignore syntax errors (because some Jupyter cells may contain
+        # ipython magics such as '%time')
+        return source_code
+
     _collect_args_to_fix(tree, args_to_fix, functions_with_one_line_kwonly_args)
 
     if not args_to_fix and not functions_with_one_line_kwonly_args:
