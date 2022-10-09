@@ -1,4 +1,4 @@
-# The function structure of this file follows https://github.com/asottile/add-trailing-comma/blob/6be6dfc05176bddfc5a9c4bf0fd4941850f0fb41/add_trailing_comma/_main.py  # noqa: E501
+# This file is inspired by https://github.com/asottile/add-trailing-comma/blob/6be6dfc05176bddfc5a9c4bf0fd4941850f0fb41/add_trailing_comma/_main.py  # noqa: E501
 
 import argparse
 import sys
@@ -10,8 +10,8 @@ from format_def_indent._base_fixer import BaseFixer
 
 
 class PythonFileFixer(BaseFixer):
-    def __init__(self, folder_name: str, cli_args: argparse.Namespace) -> None:
-        super().__init__(folder_name=folder_name, cli_args=cli_args)
+    def __init__(self, path: str, cli_args: argparse.Namespace) -> None:
+        super().__init__(path=path, cli_args=cli_args)
 
     def fix_one_file(self, filename: str) -> int:
         if filename == '-':
@@ -50,8 +50,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     ret = 0
     for path in args.paths:
-        fixer = PythonFileFixer(folder_name=path, cli_args=args)
-        ret |= fixer.fix_one_directory()
+        fixer = PythonFileFixer(path=path, cli_args=args)
+        ret |= fixer.fix_one_directory_or_one_file()
 
     return ret
 
